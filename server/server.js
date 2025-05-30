@@ -67,7 +67,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({
     success: false,
     message: "An unexpected error occurred",
-    error: process.env.NODE_ENV === "development" ? err.message : "Server error",
+    error:
+      process.env.NODE_ENV === "development" ? err.message : "Server error",
   });
 });
 
