@@ -22,8 +22,15 @@ const MyBookings = () => {
       });
 
       if (data.success) {
-        console.log("Bookings data:", data.bookings); // Debug log to check hotel location
-        setBookings(data.bookings);
+        // Filter out any null or incomplete booking objects
+        const validBookings = data.bookings.filter(
+          (booking) =>
+            booking &&
+            booking._id &&
+            booking.checkInDate &&
+            booking.checkOutDate
+        );
+        setBookings(validBookings);
       } else {
         toast.error(data.message || "Failed to fetch bookings");
       }
@@ -60,6 +67,52 @@ const MyBookings = () => {
     }
   };
 
+  // Add this helper function to safely access nested properties
+  const getRoomImage = (booking) => {
+    if (booking?.room?.images && booking.room.images.length > 0) {
+      return booking.room.images[0];
+    }
+    // Return a placeholder image if the room image is not available
+    return "https://via.placeholder.com/100x100?text=No+Image";
+  };
+
+  const getRoomType = (booking) => {
+    return booking?.room?.roomType || "Unknown Room Type";
+  };
+
+  const getHotelName = (booking) => {
+    return booking?.hotel?.name || "Unknown Hotel";
+  };
+
+  const getHotelAddress = (booking) => {
+    return booking?.hotel?.address || "Address not available";
+  };
+
+  const getRoomId = (booking) => {
+    return booking?.room?._id;
+  };
+
+  const getBookingStatus = (booking) => {
+    if (!booking || !booking.status) return "pending";
+    return booking.status;
+  };
+
+  const getIsPaid = (booking) => {
+    return booking?.isPaid || false;
+  };
+
+  const getGuests = (booking) => {
+    return booking?.guests || 1;
+  };
+
+  const getPrice = (booking) => {
+    return booking?.totalPrice || 0;
+  };
+
+  const getCreatedAt = (booking) => {
+    return booking?.createdAt;
+  };
+
   return (
     <div className="py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32">
       <Title
@@ -86,7 +139,7 @@ const MyBookings = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
-      ) : bookings.length > 0 ? (
+      ) : bookings && bookings.length > 0 ? (
         <div className="space-y-6">
           {bookings.map((booking) => (
             <div
@@ -97,12 +150,12 @@ const MyBookings = () => {
                 {/* Left Side - Hotel Image */}
                 <div className="md:w-1/4 h-60 md:h-auto relative">
                   <img
-                    src={booking.room.images[0]}
-                    alt="hotel-img"
+                    src={getRoomImage(booking)}
+                    alt={getRoomType(booking)}
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
-                    {booking.room.roomType}
+                    {booking?.room?.roomType}
                   </div>
                 </div>
 
@@ -113,7 +166,7 @@ const MyBookings = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-playfair text-xl md:text-2xl font-medium text-gray-800">
-                          {booking.hotel.name}
+                          {getHotelName(booking)}
                         </h3>
                         <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                           <img
@@ -121,7 +174,7 @@ const MyBookings = () => {
                             alt="location-icon"
                             className="w-4 h-4"
                           />
-                          <span>{booking.hotel.address}</span>
+                          <span>{getHotelAddress(booking)}</span>
                         </div>
                       </div>
 
