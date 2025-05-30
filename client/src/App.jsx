@@ -19,6 +19,7 @@ import HotelReviews from "./pages/hotelOwner/HotelReviews";
 import { Toaster } from "react-hot-toast";
 import { useAppContext } from "./context/AppContext";
 import About from "./pages/About"; // Add this import
+import EditRoom from "./pages/hotelOwner/EditRoom"; // Import the EditRoom component
 
 const App = () => {
   const isOwnerPath = useLocation().pathname.includes("owner");
@@ -45,6 +46,8 @@ const App = () => {
             <Route path="list-room" element={<ListRoom />} />
             <Route path="bookings" element={<BookingManagement />} />
             <Route path="reviews" element={<HotelReviews />} />
+            <Route path="edit-room/:id" element={<EditRoom />} />{" "}
+            {/* Add this route */}
           </Route>
         </Routes>
       </div>

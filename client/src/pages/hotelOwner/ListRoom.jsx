@@ -151,20 +151,31 @@ const ListRoom = () => {
                     </span>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-center text-sm">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        onChange={() => toggleAvailability(item._id)}
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={item.isAvailable}
-                      />
-                      <div
-                        className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full 
-                        peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] 
-                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
-                        after:transition-all peer-checked:bg-primary"
-                      ></div>
-                    </label>
+                    <div className="flex items-center justify-center gap-3">
+                      {/* Toggle Availability Switch */}
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          onChange={() => toggleAvailability(item._id)}
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={item.isAvailable}
+                        />
+                        <div
+                          className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full 
+                          peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] 
+                          after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                          after:transition-all peer-checked:bg-primary"
+                        ></div>
+                      </label>
+
+                      {/* Edit Button */}
+                      <Link
+                        to={`/owner/edit-room/${item._id}`}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

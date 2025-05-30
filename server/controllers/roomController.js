@@ -47,7 +47,10 @@ export const getRooms = async (req, res) => {
     const { city, minPrice, maxPrice } = req.query;
 
     // Build the filter query
-    let filterQuery = {};
+    let filterQuery = {
+      // Only include available rooms
+      isAvailable: true,
+    };
 
     // Add city filter if provided
     if (city) {
@@ -77,7 +80,7 @@ export const getRooms = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    console.log(`Found ${rooms.length} rooms matching filters`);
+    console.log(`Found ${rooms.length} available rooms matching filters`);
 
     res.json({ success: true, rooms });
   } catch (error) {
@@ -144,6 +147,70 @@ export const getRoomById = async (req, res) => {
 
     res.json({ success: true, room });
   } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Update an existing room
+export const updateRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roomType, pricePerNight, amenities, existingImages } = req.body;
+
+    // Find the room
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.json({ success: false, message: "Room not found" });
+    }
+
+    // Check if the user is the hotel owner
+    const hotel = await Hotel.findById(room.hotel);
+
+    if (hotel.owner.toString() !== req.auth.userId) {
+      return res.json({
+        success: false,
+        message: "Not authorized to update this room",
+      });
+    }
+
+    // Prepare update data
+    const updateData = {
+      roomType: roomType || room.roomType,
+      pricePerNight: pricePerNight ? +pricePerNight : room.pricePerNight,
+      amenities: amenities ? JSON.parse(amenities) : room.amenities,
+    };
+
+    // Handle images
+    let newImages = [];
+
+    // Keep existing images if specified
+    if (existingImages) {
+      newImages = JSON.parse(existingImages);
+    }
+
+    // Upload new images if any
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path);
+        return result.secure_url;
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      newImages = [...newImages, ...uploadedImages];
+    }
+
+    // Only update images if we have new ones
+    if (newImages.length > 0) {
+      updateData.images = newImages;
+    }
+
+    // Update the room
+    await Room.findByIdAndUpdate(id, updateData, { new: true });
+
+    res.json({ success: true, message: "Room updated successfully" });
+  } catch (error) {
+    console.error("Error in updateRoom:", error);
     res.json({ success: false, message: error.message });
   }
 };
