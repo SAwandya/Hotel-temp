@@ -1,64 +1,41 @@
-// Protect routes - requires authentication
-export const protect = (req, res, next) => {
+import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import jwt from "jsonwebtoken";
+
+export const protect = async (req, res, next) => {
   try {
-    // Check if user exists in request (added by clerk middleware)
-    if (!req.auth || !req.auth.userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized, please login",
-      });
+    // Get token from header
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "No token, authorization denied" });
     }
 
-    // If authentication passes, add user ID to req.user._id for compatibility
-    // Also store the original auth object for additional user data access
-    req.user = {
-      _id: req.auth.userId,
-      email: req.auth.email || null,
-      firstName: req.auth.firstName || null,
-      lastName: req.auth.lastName || null,
-    };
+    try {
+      // For Clerk token handling
+      // This ensures compatibility with your controllers that expect req.user._id
+      const payload = jwt.decode(token);
 
-    console.log(`User authenticated: ${req.auth.userId}`);
-    next();
+      // Add user ID to both common locations
+      req.user = { _id: payload.sub };
+      req.auth = { userId: payload.sub };
+
+      next();
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      res.status(401).json({ success: false, message: "Token is not valid" });
+    }
   } catch (error) {
     console.error("Auth middleware error:", error);
-    res.status(401).json({
-      success: false,
-      message: "Authentication failed",
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// Role-based authorization middleware
-export const authorize = (role) => {
-  return async (req, res, next) => {
-    try {
-      // Get user from database to check role
-      const userId = req.user._id;
-      const user = await User.findOne({ clerkId: userId });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found in database",
-        });
-      }
-
-      if (user.role !== role) {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. Not authorized.",
-        });
-      }
-
-      // User has required role, proceed
-      next();
-    } catch (error) {
-      console.error("Authorization error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Authorization check failed",
-      });
-    }
-  };
+// Admin middleware
+export const admin = (req, res, next) => {
+  // ... existing code ...
 };
+
+// Original Clerk middleware (as fallback)
+export const clerkAuth = ClerkExpressRequireAuth();

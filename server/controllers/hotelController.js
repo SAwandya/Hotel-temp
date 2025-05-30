@@ -173,27 +173,38 @@ export const getAllHotels = async (req, res) => {
   }
 };
 
-// Get dashboard data for hotel owner
+// Get hotel dashboard data
 export const getHotelDashboard = async (req, res) => {
   try {
-    // Get the hotel associated with the logged-in user
-    const hotel = await Hotel.findOne({ owner: req.user._id });
+    // Access userId from either req.user._id or req.auth.userId
+    const userId = req.user?._id || req.auth?.userId;
 
-    if (!hotel) {
-      return res.status(404).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        message: "Hotel not found",
+        message: "User ID not found in request. Authentication required.",
       });
     }
+
+    // Find hotel owned by user
+    const hotel = await Hotel.findOne({ owner: userId });
+
+    if (!hotel) {
+      return res.json({
+        success: false,
+        message: "No hotel found for this owner",
+      });
+    }
+
+    // Get all rooms for this hotel
+    const rooms = await Room.find({ hotel: hotel._id });
+    const roomIds = rooms.map((room) => room._id);
 
     // Get all bookings for this hotel
     const bookings = await Booking.find({ hotel: hotel._id })
       .populate("user", "username email")
       .populate("room", "roomType pricePerNight images")
       .sort({ createdAt: -1 });
-
-    // Get all rooms for this hotel
-    const rooms = await Room.find({ hotel: hotel._id });
 
     // Calculate statistics
     const totalBookings = bookings.length;
