@@ -46,6 +46,8 @@ export const getRooms = async (req, res) => {
   try {
     const { city, minPrice, maxPrice } = req.query;
 
+    console.log("Filter params:", { city, minPrice, maxPrice }); // Debug log
+
     // Build the filter query
     let filterQuery = {
       // Only include available rooms
@@ -62,15 +64,18 @@ export const getRooms = async (req, res) => {
     }
 
     // Add price range filters if provided
-    if (minPrice) {
+    if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
       filterQuery.pricePerNight = { $gte: parseInt(minPrice) };
     }
-    if (maxPrice) {
+
+    if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
       filterQuery.pricePerNight = {
         ...filterQuery.pricePerNight,
         $lte: parseInt(maxPrice),
       };
     }
+
+    console.log("Final filter query:", JSON.stringify(filterQuery)); // Debug log
 
     // Get rooms that match the filter criteria
     const rooms = await Room.find(filterQuery)

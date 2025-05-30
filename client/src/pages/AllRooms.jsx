@@ -13,16 +13,25 @@ const AllRooms = () => {
   const [city, setCity] = useState(searchParams.get("city") || "");
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [min, setMin] = useState(20);
-  const [max, setMax] = useState(100);
+
+  // Set default min and max values for price range
+  const initialMinPrice = searchParams.get("minPrice") || 20;
+  const initialMaxPrice = searchParams.get("maxPrice") || 500;
+  const [minPrice, setMinPrice] = useState(initialMinPrice);
+  const [maxPrice, setMaxPrice] = useState(initialMaxPrice);
 
   const filterRooms = async () => {
     try {
       setLoading(true);
-      let url = "/api/rooms?";
-      if (city) url += `city=${city}&`;
-      if (min > 20) url += `minPrice=${min}&`;
-      if (max < 100) url += `maxPrice=${max}&`;
+
+      // Build query string with all filters
+      let queryParams = new URLSearchParams();
+
+      if (city) queryParams.append("city", city);
+      if (minPrice && minPrice > 20) queryParams.append("minPrice", minPrice);
+      if (maxPrice && maxPrice < 500) queryParams.append("maxPrice", maxPrice);
+
+      const url = `/api/rooms?${queryParams.toString()}`;
 
       console.log("Fetching rooms with URL:", url);
       const { data } = await axios.get(url);
@@ -48,18 +57,32 @@ const AllRooms = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setSearchParams({ city });
+
+    // Update URL params
+    const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (minPrice > 20) params.set("minPrice", minPrice);
+    if (maxPrice < 500) params.set("maxPrice", maxPrice);
+
+    setSearchParams(params);
     filterRooms();
   };
 
   const handlePriceChange = ([newMin, newMax]) => {
-    setMin(newMin);
-    setMax(newMax);
+    setMinPrice(newMin);
+    setMaxPrice(newMax);
   };
 
+  // Initial load and when URL params change
   useEffect(() => {
+    const minFromParams = searchParams.get("minPrice");
+    const maxFromParams = searchParams.get("maxPrice");
+
+    if (minFromParams) setMinPrice(Number(minFromParams));
+    if (maxFromParams) setMaxPrice(Number(maxFromParams));
+
     filterRooms();
-  }, []);
+  }, [searchParams]);
 
   return (
     <div className="py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32">
@@ -113,18 +136,20 @@ const AllRooms = () => {
           <div className="mb-6">
             <h5 className="font-medium text-gray-700 mb-2">Price Range</h5>
             <PriceRangeSlider
-              defaultValues={[min, max]}
+              defaultValues={[Number(minPrice), Number(maxPrice)]}
               onChange={handlePriceChange}
+              min={0}
+              max={1000}
             />
             <div className="flex justify-between mt-2 text-sm text-gray-500">
-              <p>${min}</p>
-              <p>${max}</p>
+              <p>${minPrice}</p>
+              <p>${maxPrice}</p>
             </div>
           </div>
 
           <button
             className="w-full mt-4 bg-primary text-white py-2.5 rounded-md hover:bg-primary-dull transition-all"
-            onClick={() => filterRooms()}
+            onClick={handleSearch}
           >
             Apply Filters
           </button>
